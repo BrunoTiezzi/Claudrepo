@@ -1,0 +1,846 @@
+<meta charset="utf-8">
+<title>Frutas Vermelhas no Leite</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: cena em tela cheia; título no topo, parâmetros à direita, transporte embaixo. */
+  :root {
+    --panel: rgba(250, 251, 253, 0.86);
+    --panel-solid: #fafbfd;
+    --ink: #1f2230;
+    --muted: #666b7f;
+    --line: rgba(36, 40, 64, 0.14);
+    --accent: #b3243c;
+    --accent-soft: rgba(179, 36, 60, 0.12);
+    --ground: #e7ebf1;
+    --font-ui: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --panel: rgba(22, 24, 33, 0.84);
+      --panel-solid: #161821;
+      --ink: #eef0f6;
+      --muted: #a3a8bb;
+      --line: rgba(230, 234, 250, 0.15);
+      --accent: #f06a80;
+      --accent-soft: rgba(240, 106, 128, 0.18);
+      --ground: #14161d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --panel: rgba(22, 24, 33, 0.84);
+    --panel-solid: #161821;
+    --ink: #eef0f6;
+    --muted: #a3a8bb;
+    --line: rgba(230, 234, 250, 0.15);
+    --accent: #f06a80;
+    --accent-soft: rgba(240, 106, 128, 0.18);
+    --ground: #14161d;
+    color-scheme: dark;
+  }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--font-ui); overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+  .ui {
+    position: fixed; inset: 0; pointer-events: none;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: calc(env(safe-area-inset-top, 0px) + 16px) calc(env(safe-area-inset-bottom, 0px) + 16px);
+    display: grid; grid-template-rows: auto 1fr auto; gap: 12px;
+  }
+  .ui > * { pointer-events: auto; }
+  .card {
+    background: var(--panel);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; pointer-events: none; }
+  .top > * { pointer-events: auto; }
+  .title { padding: 10px 14px; display: grid; gap: 2px; min-width: 0; }
+  .title h1 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+  .title p { margin: 0; font-size: 0.78rem; color: var(--muted); }
+  details.params { width: min(300px, 100%); }
+  details.params summary {
+    list-style: none; cursor: pointer; padding: 10px 14px; font-size: 0.82rem; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 14px;
+  }
+  details.params summary::-webkit-details-marker { display: none; }
+  details.params summary::after { content: "+"; font-family: var(--font-mono); color: var(--muted); }
+  details.params[open] summary::after { content: "–"; }
+  .params-body { padding: 2px 14px 14px; display: grid; gap: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field-head { display: flex; justify-content: space-between; font-size: 0.78rem; gap: 8px; }
+  .field-head output { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hint { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
+  .toggles { display: grid; gap: 6px; font-size: 0.78rem; }
+  .toggles label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  .toggles input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+  .physics { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; line-height: 1.6; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) 0 var(--fill, 50%), var(--line) var(--fill, 50%) 100%); }
+  input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
+  input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--panel-solid); border: 2px solid var(--accent); margin-top: -6px; }
+  input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--panel-solid); border: 2px solid var(--accent); }
+  .transport { display: flex; align-items: center; gap: 10px; padding: 8px 10px; flex-wrap: wrap; }
+  .btn {
+    font: inherit; font-size: 0.8rem; color: var(--ink); background: transparent;
+    border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn:focus-visible, summary:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--panel-solid); }
+  .btn svg { width: 14px; height: 14px; fill: currentColor; }
+  .timeline { flex: 1 1 220px; min-width: 0; display: flex; align-items: center; gap: 10px; }
+  .timecode { font-family: var(--font-mono); font-size: 0.8rem; font-variant-numeric: tabular-nums; white-space: nowrap; display: grid; line-height: 1.25; }
+  .timecode small { color: var(--muted); font-size: 0.68rem; }
+  .cams { display: flex; gap: 4px; }
+  .cams .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  @media (max-width: 560px) {
+    .transport { gap: 8px; }
+    .cams { width: 100%; }
+    .cams .btn { flex: 1; }
+  }
+</style>
+
+<canvas id="stage" aria-label="Simulação 3D de frutas vermelhas caindo no leite em câmera lenta"></canvas>
+
+<div class="ui">
+  <div class="top">
+    <div class="card title">
+      <h1>Frutas vermelhas no leite</h1>
+      <p id="subtitle">Splash em câmera lenta · 3,00 s</p>
+    </div>
+    <details class="card params" id="params">
+      <summary>Parâmetros</summary>
+      <div class="params-body">
+        <div class="field">
+          <div class="field-head"><label for="p-slow">Câmera lenta</label><output id="o-slow"></output></div>
+          <input type="range" id="p-slow" min="4" max="20" step="1" value="10">
+          <div class="hint">Quanto mais lento, menor o trecho de tempo real que cabe nos 3 segundos.</div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="p-drop">Altura da queda</label><output id="o-drop"></output></div>
+          <input type="range" id="p-drop" min="6" max="30" step="1" value="16">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="p-fingers">Dedos da coroa</label><output id="o-fingers"></output></div>
+          <input type="range" id="p-fingers" min="10" max="26" step="1" value="18">
+        </div>
+        <div class="toggles">
+          <label><input type="checkbox" id="p-loop" checked> Repetir em loop</label>
+        </div>
+        <div class="physics" id="physics"></div>
+      </div>
+    </details>
+  </div>
+  <div></div>
+  <div class="card transport">
+    <button class="btn primary" id="play" aria-label="Pausar">
+      <svg viewBox="0 0 16 16" id="ico-pause"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+      <svg viewBox="0 0 16 16" id="ico-play" hidden><path d="M4 2.2v11.6c0 .6.7 1 1.2.6l8.6-5.8a.75.75 0 0 0 0-1.2L5.2 1.6C4.7 1.3 4 1.6 4 2.2z"/></svg>
+    </button>
+    <button class="btn" id="restart" aria-label="Voltar ao início">
+      <svg viewBox="0 0 16 16"><path d="M8 2.5a5.5 5.5 0 1 1-5.2 7.3.9.9 0 1 1 1.7-.6A3.7 3.7 0 1 0 5 5.4l1.3 1.3H2.3V2.7l1.4 1.4A5.5 5.5 0 0 1 8 2.5z"/></svg>
+    </button>
+    <div class="timeline">
+      <input type="range" id="scrub" min="0" max="3" step="0.001" value="0" aria-label="Tempo">
+      <div class="timecode"><span id="tc">0,00 / 3,00 s</span><small id="tc-real">tempo real 0 ms</small></div>
+    </div>
+    <div class="cams" role="group" aria-label="Câmera">
+      <button class="btn" data-cam="three" aria-pressed="true">3/4</button>
+      <button class="btn" data-cam="low" aria-pressed="false">Rasante</button>
+      <button class="btn" data-cam="top" aria-pressed="false">Zenital</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---------------------------------------------------------------------------
+// Unidades: cm e segundos. "t" é o tempo do clipe (0–3 s); "τ" é o tempo real
+// desde um impacto, τ = (t − t_impacto) / câmera lenta.
+// Tudo é função analítica do tempo: dá para ir e voltar na linha do tempo.
+// ---------------------------------------------------------------------------
+const DUR = 3.0;
+const G = 981;
+const params = { slow: 10, drop: 16, fingers: 18, loop: true };
+
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+const peak = (x, p) => x <= 0 ? 0 : (x / p) * Math.exp(1 - x / p);
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Renderer e cena
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const BG = new THREE.Color(0xe9edf3);
+scene.background = BG;
+scene.fog = new THREE.Fog(BG, 30, 70);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 300);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 4;
+controls.maxDistance = 60;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe4ee, 0.6));
+const sun = new THREE.DirectionalLight(0xfff6ea, 2.3);
+sun.position.set(-10, 22, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 4, far: 60 });
+sun.shadow.bias = -0.0003;
+sun.shadow.normalBias = 0.015;
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0xdfe8ff, 0.9);
+rim.position.set(9, 7, -14);
+scene.add(rim);
+
+// ---------------------------------------------------------------------------
+// Leite
+// ---------------------------------------------------------------------------
+const milkMat = new THREE.MeshPhysicalMaterial({
+  color: 0xfcfcfa, roughness: 0.14, clearcoat: 0.6, clearcoatRoughness: 0.08,
+  sheen: 0.5, sheenColor: new THREE.Color(0xffffff), sheenRoughness: 0.4,
+  emissive: new THREE.Color(0x24262b), envMapIntensity: 0.9
+});
+const crownMat = milkMat.clone();
+crownMat.side = THREE.DoubleSide;
+
+// ---------------------------------------------------------------------------
+// Frutas
+// ---------------------------------------------------------------------------
+const unitSphere = new THREE.SphereGeometry(1, 14, 10);
+
+// Framboesa e amora: drupéolas instanciadas sobre um núcleo em forma de ovo,
+// com a cavidade do receptáculo aberta no topo.
+function drupeBerry({ R, H, n, dr, colA, colB, core, cav, rough, clear, sheen, seed }) {
+  const g = new THREE.Group();
+  const r = rng(seed);
+  const coreMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24),
+    new THREE.MeshStandardMaterial({ color: core, roughness: 0.6 }));
+  coreMesh.scale.set(R * 0.86, H / 2 * 0.86, R * 0.86);
+  coreMesh.castShadow = true;
+  g.add(coreMesh);
+  const cavity = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.36, R * 0.2, 0.3, 20),
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(core).multiplyScalar(0.45), roughness: 0.9 }));
+  cavity.position.y = H / 2 * 0.78;
+  g.add(cavity);
+  const mat = new THREE.MeshPhysicalMaterial({
+    roughness: rough, clearcoat: clear, clearcoatRoughness: 0.12,
+    sheen, sheenColor: new THREE.Color(colA).lerp(new THREE.Color(0xffffff), 0.5), sheenRoughness: 0.35,
+    envMapIntensity: 1.0
+  });
+  const im = new THREE.InstancedMesh(unitSphere, mat, n);
+  im.castShadow = true;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), nrm = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0), cA = new THREE.Color(colA), cB = new THREE.Color(colB), c = new THREE.Color();
+  let k = 0;
+  for (let i = 0; i < n; i++) {
+    const y = 1 - 2 * (i + 0.5) / n, phi = Math.acos(y), th = i * 2.399963 + r() * 0.15;
+    if (phi < cav) continue;
+    const sp = Math.sin(phi), cp = Math.cos(phi);
+    const rr = R * sp * (1 + 0.12 * cp);
+    p.set(rr * Math.cos(th), H / 2 * cp, rr * Math.sin(th));
+    nrm.set(p.x / (R * R), p.y / ((H / 2) ** 2), p.z / (R * R)).normalize();
+    p.addScaledVector(nrm, dr * 0.15);
+    q.setFromUnitVectors(up, nrm);
+    const d = dr * (0.85 + r() * 0.3);
+    s.set(d, d * 1.18, d);
+    m.compose(p, q, s);
+    im.setMatrixAt(k, m);
+    im.setColorAt(k, c.copy(cA).lerp(cB, r()));
+    k++;
+  }
+  im.count = k;
+  g.add(im);
+  return g;
+}
+function raspberry(seed) {
+  return drupeBerry({ R: 1.02, H: 2.0, n: 150, dr: 0.215, colA: 0xe04a62, colB: 0xb01f3a, core: 0x8c1426, cav: 0.5, rough: 0.42, clear: 0.5, sheen: 0.8, seed });
+}
+function blackberry(seed) {
+  return drupeBerry({ R: 1.02, H: 2.4, n: 110, dr: 0.27, colA: 0x3a2350, colB: 0x170c22, core: 0x1a0d22, cav: 0.32, rough: 0.12, clear: 1, sheen: 0.2, seed });
+}
+function blueberry() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 28), new THREE.MeshPhysicalMaterial({
+    color: 0x34477f, roughness: 0.55, sheen: 1, sheenColor: new THREE.Color(0xb9c6ea), sheenRoughness: 0.55,
+    clearcoat: 0.2, clearcoatRoughness: 0.5, envMapIntensity: 0.8
+  }));
+  body.scale.set(0.78, 0.68, 0.78);
+  body.castShadow = true;
+  g.add(body);
+  const dark = new THREE.MeshStandardMaterial({ color: 0x151b36, roughness: 0.8 });
+  const pit = new THREE.Mesh(new THREE.CircleGeometry(0.16, 20), dark);
+  pit.rotation.x = -Math.PI / 2; pit.position.y = 0.675;
+  g.add(pit);
+  const sepal = new THREE.ConeGeometry(0.075, 0.2, 4);
+  for (let k = 0; k < 5; k++) {
+    const a = k / 5 * Math.PI * 2;
+    const m = new THREE.Mesh(sepal, dark);
+    m.position.set(Math.cos(a) * 0.15, 0.69, Math.sin(a) * 0.15);
+    m.lookAt(Math.cos(a) * 0.6, 0.85, Math.sin(a) * 0.6);
+    m.rotateX(Math.PI / 2);
+    m.scale.set(1, 1, 0.5);
+    g.add(m);
+  }
+  return g;
+}
+function strawberry(seed) {
+  const g = new THREE.Group();
+  const r = rng(seed);
+  const prof = y => {
+    if (y <= 0) return 0;
+    if (y < 2.45) return 1.45 * Math.pow(Math.sin(Math.min(1, y / 2.45) * Math.PI / 2), 0.8);
+    if (y < 3.0) return 1.45 * Math.sqrt(Math.max(0, 1 - ((y - 2.45) / 0.58) ** 2)) + 0.0005;
+    return 0;
+  };
+  const pts = [];
+  for (let i = 0; i <= 90; i++) { const y = 3.0 * i / 90; pts.push(new THREE.Vector2(Math.max(prof(y), 0.0005), y)); }
+  const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), new THREE.MeshPhysicalMaterial({
+    color: 0xd2263a, roughness: 0.28, clearcoat: 0.9, clearcoatRoughness: 0.1, envMapIntensity: 1
+  }));
+  body.castShadow = true;
+  g.add(body);
+  const seeds = new THREE.InstancedMesh(unitSphere, new THREE.MeshStandardMaterial({ color: 0xe3b84e, roughness: 0.5 }), 200);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(0.034, 0.06, 0.034), p = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < 200; i++) {
+    const y = 0.15 + 2.55 * Math.pow((i + 0.5) / 200, 0.8), a = i * 2.399963;
+    const rr = prof(y);
+    const dy = (prof(y + 0.02) - prof(y - 0.02)) / 0.04;
+    n.set(Math.cos(a), -dy, Math.sin(a)).normalize();
+    p.set(Math.cos(a) * rr, y, Math.sin(a) * rr).addScaledVector(n, -0.01);
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-Math.sin(a), 0, Math.cos(a)).cross(n).normalize());
+    m.compose(p, q, s);
+    seeds.setMatrixAt(i, m);
+  }
+  g.add(seeds);
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x4f8a2c, roughness: 0.6, side: THREE.DoubleSide });
+  for (let k = 0; k < 8; k++) {
+    const a = k / 8 * Math.PI * 2 + r() * 0.2;
+    const leaf = new THREE.Mesh(unitSphere, leafMat);
+    leaf.scale.set(0.2, 0.035, 0.62);
+    leaf.position.set(Math.cos(a) * 0.5, 2.98, Math.sin(a) * 0.5);
+    leaf.rotation.y = -a + Math.PI / 2;
+    leaf.rotateX(0.25);
+    leaf.castShadow = true;
+    g.add(leaf);
+  }
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.55, 10), leafMat);
+  stem.position.y = 3.25; stem.rotation.z = 0.2;
+  g.add(stem);
+  g.children.forEach(c => c.position.y -= 1.5);
+  return g;
+}
+
+// ---------------------------------------------------------------------------
+// Coreografia: frutas que caem (cada uma gera um impacto) e frutas boiando
+// ---------------------------------------------------------------------------
+const FALLERS = [
+  { make: () => blackberry(3), t: 0.42, x: 0.3, z: 0.2, rb: 1.1, half: 1.2, yF: -0.2, vx: -12, vz: 6, seed: 1, rest: [0.15, 0, -0.1] },
+  { make: () => raspberry(7), t: 1.02, x: -2.9, z: 1.5, rb: 1.0, half: 1.0, yF: -0.1, vx: 14, vz: -4, seed: 2, rest: [-0.2, 0.6, 0.15] },
+  { make: () => blueberry(), t: 1.42, x: 2.6, z: 2.1, rb: 0.78, half: 0.68, yF: -0.18, vx: -8, vz: -10, seed: 3, rest: [0.1, 0, 0.12] },
+  { make: () => raspberry(19), t: 1.92, x: 1.9, z: -2.6, rb: 1.0, half: 1.0, yF: -0.1, vx: 6, vz: 12, seed: 4, rest: [0.25, 2.2, -0.1] }
+];
+const FLOATERS = [
+  { make: () => strawberry(5), x: -7.2, z: -2.6, yF: -0.55, rot: [0.1, 0.9, 1.45] },
+  { make: () => strawberry(9), x: 7.6, z: -4.4, yF: -0.5, rot: [-0.2, -0.6, -1.5] },
+  { make: () => blueberry(), x: -5.0, z: 4.6, yF: -0.2, rot: [0.3, 0, 0.2] },
+  { make: () => blueberry(), x: 6.3, z: 3.2, yF: -0.25, rot: [-0.4, 1, 0.1] },
+  { make: () => raspberry(31), x: -4.8, z: -5.6, yF: -0.25, rot: [1.3, 0.4, 0.3] }
+];
+const fallers = FALLERS.map(f => {
+  const obj = f.make();
+  scene.add(obj);
+  const axis = new THREE.Vector3(Math.sin(f.seed * 2.1), 0.6, Math.cos(f.seed * 1.7)).normalize();
+  const qRest = new THREE.Quaternion().setFromEuler(new THREE.Euler(...f.rest));
+  return { ...f, obj, axis, qRest };
+});
+const floaters = FLOATERS.map(f => {
+  const obj = f.make(); scene.add(obj);
+  return { ...f, obj, q0: new THREE.Quaternion().setFromEuler(new THREE.Euler(...f.rot)) };
+});
+
+// Impactos: força relativa s ∝ velocidade × raio
+const impacts = fallers.map(f => ({ f, x: f.x, z: f.z, t: f.t, rb: f.rb, s: 1, fingers: [], drops: [], N: 0 }));
+function vImpact() { return Math.sqrt(2 * G * params.drop); }
+
+// Raio da base da coroa, altura do anel e dedos (em τ real, segundos)
+function crownR(imp, tau) { return imp.rb * 0.92 + 5.8 * imp.s * Math.sqrt(Math.max(0, tau)); }
+function crownH(imp, tau) {
+  const Hmax = 1.35 * imp.s;
+  return Hmax * peak(tau, 0.028) * Math.exp(-Math.max(0, tau - 0.05) / 0.025);
+}
+function fingerAmp(imp, tau) {
+  return 0.75 * 1.35 * imp.s * smooth(0.004, 0.03, tau) * Math.exp(-Math.max(0, tau - 0.045) / 0.03);
+}
+
+// Gotas que se soltam da ponta dos dedos (Rayleigh–Plateau): pinçam e seguem balísticas
+function buildEvents() {
+  const v = vImpact();
+  for (const imp of impacts) {
+    imp.s = clamp((v / 177) * (imp.rb / 1.0), 0.35, 2.2);
+    const r = rng(1000 + imp.f.seed * 97);
+    imp.N = Math.max(8, Math.round(params.fingers * imp.rb));
+    imp.fingers = [];
+    for (let k = 0; k < imp.N; k++) {
+      imp.fingers.push({
+        th: (k + 0.5 + (r() - 0.5) * 0.45) / imp.N * Math.PI * 2,
+        a: 0.45 + r() * 0.85,
+        pinch: 0.02 + r() * 0.022
+      });
+    }
+    imp.drops = [];
+    for (let k = 0; k < imp.N; k++) {
+      const fg = imp.fingers[k];
+      const nd = r() < 0.45 ? 2 : 1;
+      for (let j = 0; j < nd; j++) {
+        const tp = fg.pinch + j * (0.012 + r() * 0.01);
+        const tip = fingerTip(imp, fg, tp);
+        const vr = (40 + r() * 70) * imp.s * (j ? 0.7 : 1);
+        const vu = (45 + r() * 70) * imp.s * fg.a * (j ? 0.75 : 1);
+        const dr = (0.07 + r() * 0.07) * Math.sqrt(imp.s) * (j ? 0.7 : 1);
+        const cx = Math.cos(fg.th), cz = Math.sin(fg.th);
+        const tl = (vu + Math.sqrt(vu * vu + 2 * G * Math.max(tip.y, 0))) / G; // instante em que volta ao leite
+        imp.drops.push({ k, tp, p0: tip, vx: vr * cx, vz: vr * cz, vy: vu, r: dr, tl });
+      }
+    }
+  }
+}
+function fingerTip(imp, fg, tau) {
+  const R = crownR(imp, tau), H = crownH(imp, tau);
+  const Rt = R + 0.6 * H;
+  const h = H + fingerAmp(imp, tau) * fg.a;
+  return { x: imp.x + Math.cos(fg.th) * Rt, y: h + 0.06, z: imp.z + Math.sin(fg.th) * Rt };
+}
+
+// Altura da superfície do leite devido a um impacto
+function impactHeight(imp, x, z, tau) {
+  if (tau <= 0) return 0;
+  const dx = x - imp.x, dz = z - imp.z;
+  const r = Math.sqrt(dx * dx + dz * dz);
+  const s = imp.s;
+  const R = crownR(imp, tau);
+  // cratera aberta pela fruta
+  const D = 0.95 * s * peak(tau, 0.02);
+  const sig = 0.8 * R;
+  let h = -D * Math.exp(-(r * r) / (sig * sig));
+  // colar na base da coroa
+  const Hc = crownH(imp, tau);
+  const q = (r - R) / 0.55;
+  h += 0.35 * Hc * Math.exp(-q * q);
+  // ondas capilares-gravitacionais que se afastam
+  if (tau > 0.025) {
+    const r0 = crownR(imp, 0.04);
+    const age = tau - 0.03;
+    const front = r0 + 21 * age;
+    const e = (r - front) / 1.7;
+    if (e > -4 && e < 4) {
+      const env = Math.exp(-e * e) * smooth(0.025, 0.07, tau) * Math.exp(-age / 0.4) / Math.sqrt(1 + 0.2 * r);
+      h += 0.3 * s * env * Math.cos(5.2 * (r - front));
+    }
+    // ressalto central depois que a cratera fecha
+    h += 0.35 * s * peak(tau - 0.045, 0.035) * Math.exp(-(r * r) / (1.2 * 1.2 * imp.rb * imp.rb));
+  }
+  return h;
+}
+function ambient(x, z, t) {
+  return 0.016 * Math.sin(0.8 * x + 0.35 * t) + 0.012 * Math.sin(0.65 * z - 0.3 * t + 1.3) + 0.008 * Math.sin(1.7 * (x + z) + 0.5 * t);
+}
+function tauOf(imp, t) { return (t - imp.t) / params.slow; }
+function surfaceAt(x, z, t, skip) {
+  let h = ambient(x, z, t);
+  for (const imp of impacts) if (imp !== skip) h += impactHeight(imp, x, z, tauOf(imp, t));
+  return h;
+}
+
+// Malha da superfície (campo de alturas analítico)
+const SIZE = 30, SEG = 220, SN = SEG + 1, DX = SIZE / SEG;
+const surfGeo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+surfGeo.rotateX(-Math.PI / 2);
+const sPos = surfGeo.attributes.position, sNor = surfGeo.attributes.normal;
+sPos.setUsage(THREE.DynamicDrawUsage); sNor.setUsage(THREE.DynamicDrawUsage);
+const hgt = new Float32Array(SN * SN);
+const surface = new THREE.Mesh(surfGeo, milkMat);
+surface.receiveShadow = true; surface.castShadow = true;
+scene.add(surface);
+const farMilk = new THREE.Mesh(new THREE.RingGeometry(SIZE * 0.49, 140, 64, 1), milkMat);
+farMilk.rotation.x = -Math.PI / 2; farMilk.position.y = -0.003; farMilk.receiveShadow = true;
+scene.add(farMilk);
+// borda do campo animado some suavemente na parte estática
+function updateSurface(t) {
+  for (let j = 0; j < SN; j++) {
+    const z = -SIZE / 2 + j * DX;
+    for (let i = 0; i < SN; i++) { const x = -SIZE / 2 + i * DX; hgt[j * SN + i] = ambient(x, z, t); }
+  }
+  for (const imp of impacts) {
+    const tau = tauOf(imp, t);
+    if (tau <= 0) continue;
+    const reach = crownR(imp, 0.04) + 21 * Math.max(0, tau - 0.03) + 7;
+    const i0 = Math.max(0, Math.floor((imp.x - reach + SIZE / 2) / DX)), i1 = Math.min(SEG, Math.ceil((imp.x + reach + SIZE / 2) / DX));
+    const j0 = Math.max(0, Math.floor((imp.z - reach + SIZE / 2) / DX)), j1 = Math.min(SEG, Math.ceil((imp.z + reach + SIZE / 2) / DX));
+    for (let j = j0; j <= j1; j++) {
+      const z = -SIZE / 2 + j * DX;
+      for (let i = i0; i <= i1; i++) hgt[j * SN + i] += impactHeight(imp, -SIZE / 2 + i * DX, z, tau);
+    }
+  }
+  // atenua perto da borda do campo para casar com o leite parado
+  for (let j = 0; j < SN; j++) for (let i = 0; i < SN; i++) {
+    const e = Math.min(i, j, SEG - i, SEG - j) * DX;
+    if (e < 3) hgt[j * SN + i] *= smooth(0, 3, e);
+  }
+  const P = sPos.array, Nn = sNor.array;
+  for (let j = 0; j < SN; j++) for (let i = 0; i < SN; i++) {
+    const k = j * SN + i;
+    P[k * 3 + 1] = hgt[k];
+    const hl = hgt[j * SN + Math.max(0, i - 1)], hr = hgt[j * SN + Math.min(SEG, i + 1)];
+    const hd = hgt[Math.max(0, j - 1) * SN + i], hu = hgt[Math.min(SEG, j + 1) * SN + i];
+    let nx = (hl - hr), ny = 2 * DX, nz = (hd - hu);
+    const l = Math.hypot(nx, ny, nz); Nn[k * 3] = nx / l; Nn[k * 3 + 1] = ny / l; Nn[k * 3 + 2] = nz / l;
+  }
+  sPos.needsUpdate = true; sNor.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------------------
+// Coroa (lâmina fina que sobe, abre e forma dedos na borda)
+// ---------------------------------------------------------------------------
+const AU = 180, M = 10, C = 6, PV = M + (C - 1) + M;
+function makeCrownMesh() {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(AU * PV * 3);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(AU * PV * 3), 3).setUsage(THREE.DynamicDrawUsage));
+  const idx = [];
+  for (let a = 0; a < AU; a++) for (let v = 0; v < PV - 1; v++) {
+    const a1 = (a + 1) % AU;
+    const p = a * PV + v, q = a1 * PV + v;
+    idx.push(p, q, p + 1, q, q + 1, p + 1);
+  }
+  geo.setIndex(idx);
+  const mesh = new THREE.Mesh(geo, crownMat);
+  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+  scene.add(mesh);
+  return mesh;
+}
+impacts.forEach(imp => { imp.crown = makeCrownMesh(); });
+function fingerShape(imp, th, tau) {
+  let s = 0;
+  const w = 0.34 * (2 * Math.PI / imp.N);
+  for (const fg of imp.fingers) {
+    let d = th - fg.th; d = Math.atan2(Math.sin(d), Math.cos(d));
+    if (Math.abs(d) > 3 * w) continue;
+    const retract = tau < fg.pinch ? 1 : Math.exp(-(tau - fg.pinch) / 0.014);
+    s += fg.a * retract * Math.exp(-((d / w) ** 2));
+  }
+  return s;
+}
+function updateCrown(imp, t) {
+  const tau = tauOf(imp, t);
+  const H = crownH(imp, tau);
+  if (tau <= 0 || H < 0.14) { imp.crown.visible = false; return; }
+  imp.crown.visible = true;
+  const R = crownR(imp, tau), F = fingerAmp(imp, tau), lean = 0.6;
+  const pos = imp.crown.geometry.attributes.position.array;
+  const y0 = -0.35;
+  for (let a = 0; a < AU; a++) {
+    const th = a / AU * Math.PI * 2, ca = Math.cos(th), sa = Math.sin(th);
+    const Ht = H + F * fingerShape(imp, th, tau);
+    const Rt = R + lean * H;
+    const tr = Rt - R, ty = Ht - y0, tl = Math.hypot(tr, ty);
+    const Tr = tr / tl, Ty = ty / tl, Nr = Ty, Ny = -Tr;
+    let o = a * PV * 3;
+    const put = (r, y) => { pos[o++] = imp.x + ca * r; pos[o++] = y; pos[o++] = imp.z + sa * r; };
+    const center = v => {
+      const bul = Math.sin(Math.PI * v) * 0.12 * H;
+      return [R + tr * v + bul, y0 + ty * v];
+    };
+    const thick = v => 0.035 + 0.05 * smooth(0.65, 1, v) + 0.03 * (1 - v);
+    for (let m = 0; m < M; m++) { const v = m / (M - 1), [cr, cy] = center(v), d = thick(v); put(cr + Nr * d, cy + Ny * d); }
+    const [tr0, ty0] = center(1), dT = thick(1);
+    for (let c = 1; c < C; c++) {
+      const al = Math.PI * c / C, dr = Nr * Math.cos(al) + Tr * Math.sin(al), dy = Ny * Math.cos(al) + Ty * Math.sin(al);
+      put(tr0 + dr * dT, ty0 + dy * dT);
+    }
+    for (let m = M - 1; m >= 0; m--) { const v = m / (M - 1), [cr, cy] = center(v), d = thick(v); put(cr - Nr * d, cy - Ny * d); }
+  }
+  imp.crown.geometry.attributes.position.needsUpdate = true;
+  imp.crown.geometry.computeVertexNormals();
+}
+
+// ---------------------------------------------------------------------------
+// Gotas (instanciadas)
+// ---------------------------------------------------------------------------
+const MAXD = 600;
+const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), milkMat, MAXD);
+drops.castShadow = true; drops.frustumCulled = false;
+scene.add(drops);
+const dm = new THREE.Matrix4(), dq = new THREE.Quaternion(), ds = new THREE.Vector3(), dp = new THREE.Vector3(), dv = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
+function updateDrops(t) {
+  let n = 0;
+  for (const imp of impacts) {
+    const tau = tauOf(imp, t);
+    if (tau <= 0) continue;
+    for (const d of imp.drops) {
+      if (n >= MAXD) break;
+      const fg = imp.fingers[d.k];
+      if (tau < d.tp) {
+        // bulbo crescendo na ponta do dedo antes de soltar
+        if (tau < 0.006) continue;
+        const tip = fingerTip(imp, fg, tau);
+        const g = smooth(0.006, d.tp, tau);
+        const rr = d.r * (0.4 + 0.6 * g);
+        dp.set(tip.x, tip.y, tip.z); dq.identity(); ds.set(rr, rr * 1.15, rr);
+      } else {
+        const a = tau - d.tp;
+        if (a < d.tl) {
+          dp.set(d.p0.x + d.vx * a, d.p0.y + d.vy * a - 0.5 * G * a * a, d.p0.z + d.vz * a);
+          dv.set(d.vx, d.vy - G * a, d.vz);
+          const sp = dv.length();
+          dq.setFromUnitVectors(Y, dv.divideScalar(sp || 1));
+          const stretch = 1 + 0.6 * Math.exp(-a / 0.012);
+          ds.set(d.r / Math.sqrt(stretch), d.r * stretch, d.r / Math.sqrt(stretch));
+        } else {
+          // gota volta ao leite e se achata
+          const u = (a - d.tl) / 0.02;
+          if (u > 1) continue;
+          const x = d.p0.x + d.vx * d.tl, z = d.p0.z + d.vz * d.tl;
+          dp.set(x, surfaceAt(x, z, t) - d.r * 0.2 * u, z); dq.identity();
+          ds.set(d.r * (1 + 1.4 * u), d.r * 0.55 * (1 - u) + 0.005, d.r * (1 + 1.4 * u));
+        }
+      }
+      dm.compose(dp, dq, ds);
+      drops.setMatrixAt(n++, dm);
+    }
+  }
+  drops.count = n;
+  drops.instanceMatrix.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------------------
+// Movimento das frutas
+// ---------------------------------------------------------------------------
+const qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), eTilt = new THREE.Euler();
+function updateFruits(t) {
+  const v = vImpact();
+  const tFall = Math.sqrt(2 * params.drop / G); // tempo de queda livre
+  impacts.forEach(imp => {
+    const f = imp.f, tau = tauOf(imp, t);
+    let x, y, z;
+    if (tau < 0) {
+      const d = Math.min(-tau, tFall);
+      x = f.x - f.vx * d; z = f.z - f.vz * d;
+      y = f.half + v * d - 0.5 * G * d * d;
+      f.obj.visible = -tau < tFall * 0.999;
+      qa.setFromAxisAngle(f.axis, 9 * tau);
+      f.obj.quaternion.copy(f.qRest).multiply(qa);
+    } else {
+      f.obj.visible = true;
+      const b = 32, w = 135;
+      const y0 = f.half, yF = f.yF;
+      const e = Math.exp(-b * tau);
+      y = yF + e * ((y0 - yF) * Math.cos(w * tau) + ((-v * 0.55 + b * (y0 - yF)) / w) * Math.sin(w * tau));
+      y += surfaceAt(f.x, f.z, t, imp) * 0.9;
+      const slide = 0.022 * (1 - Math.exp(-tau / 0.022));
+      x = f.x + f.vx * slide; z = f.z + f.vz * slide;
+      qa.setFromAxisAngle(f.axis, 9 * 0.02 * (1 - Math.exp(-tau / 0.02)) * Math.exp(-tau / 0.09));
+      f.obj.quaternion.copy(f.qRest).multiply(qa);
+    }
+    f.obj.position.set(x, y, z);
+  });
+  floaters.forEach(f => {
+    const h = surfaceAt(f.x, f.z, t);
+    const gx = (surfaceAt(f.x + 0.3, f.z, t) - surfaceAt(f.x - 0.3, f.z, t)) / 0.6;
+    const gz = (surfaceAt(f.x, f.z + 0.3, t) - surfaceAt(f.x, f.z - 0.3, t)) / 0.6;
+    f.obj.position.set(f.x, h + f.yF, f.z);
+    eTilt.set(gz * 0.8, 0, -gx * 0.8);
+    qb.setFromEuler(eTilt);
+    f.obj.quaternion.copy(qb).multiply(f.q0);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Câmeras
+// ---------------------------------------------------------------------------
+const CAMS = {
+  three: { pos: [0.5, 11.5, 14.5], target: [0, 0.9, 0], fov: 34 },
+  low: { pos: [0.5, 2.6, 19.5], target: [0, 1.6, 0], fov: 30 },
+  top: { pos: [0, 25, 3.5], target: [0, 0, 0.2], fov: 38 }
+};
+let camMode = 'three', camAnim = null;
+function setCam(mode, instant) {
+  camMode = mode;
+  const c = CAMS[mode];
+  const pos = new THREE.Vector3(...c.pos), target = new THREE.Vector3(...c.target);
+  document.querySelectorAll('[data-cam]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cam === mode)));
+  if (instant) { camera.position.copy(pos); controls.target.copy(target); applyFov(); camAnim = null; return; }
+  camAnim = { t: 0, p0: camera.position.clone(), q0: controls.target.clone(), p1: pos, q1: target };
+}
+function applyFov() {
+  const base = CAMS[camMode].fov;
+  camera.fov = camera.aspect < 1 ? Math.min(70, base / Math.max(camera.aspect, 0.5)) : base;
+  camera.updateProjectionMatrix();
+}
+function updateCamera(dtw) {
+  if (camAnim) {
+    camAnim.t = Math.min(1, camAnim.t + dtw / 0.9);
+    const e = smooth(0, 1, camAnim.t);
+    camera.position.lerpVectors(camAnim.p0, camAnim.p1, e);
+    controls.target.lerpVectors(camAnim.q0, camAnim.q1, e);
+    applyFov();
+    if (camAnim.t >= 1) camAnim = null;
+  }
+  controls.update();
+}
+
+// ---------------------------------------------------------------------------
+// Estado e interface
+// ---------------------------------------------------------------------------
+let time = 0;
+function renderState() {
+  updateSurface(time);
+  impacts.forEach(imp => updateCrown(imp, time));
+  updateDrops(time);
+  updateFruits(time);
+}
+
+const $ = id => document.getElementById(id);
+const fmt = (x, d = 2) => x.toFixed(d).replace('.', ',');
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let playing = !reduced, scrubbing = false;
+const playBtn = $('play'), scrub = $('scrub');
+function setPlaying(p) {
+  playing = p;
+  $('ico-pause').hidden = !p; $('ico-play').hidden = p;
+  playBtn.setAttribute('aria-label', p ? 'Pausar' : 'Reproduzir');
+}
+function paintRange(el) { const f = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty('--fill', f + '%'); }
+function updateUI() {
+  if (!scrubbing) { scrub.value = time; paintRange(scrub); }
+  $('tc').textContent = `${fmt(time)} / 3,00 s`;
+  $('tc-real').textContent = `tempo real ${Math.round(time / params.slow * 1000)} ms`;
+}
+function updateReadouts() {
+  const v = vImpact();
+  $('o-slow').textContent = `${params.slow}× · ${30 * params.slow} fps`;
+  $('o-drop').textContent = `${params.drop} cm`;
+  $('o-fingers').textContent = `${params.fingers}`;
+  $('subtitle').textContent = `Splash em câmera lenta ${params.slow}× · 3,00 s = ${Math.round(3000 / params.slow)} ms reais`;
+  const big = impacts[0];
+  const hMax = (1.35 * big.s + 0.75 * 1.35 * big.s * 1.3);
+  $('physics').innerHTML =
+    `impacto a ${fmt(v / 100, 2)} m/s (queda de ${params.drop} cm)<br>` +
+    `coroa da amora: até ~${fmt(hMax * 10, 0)} mm de altura em ~30 ms<br>` +
+    `ondas a 21 cm/s · gotas: ${impacts.reduce((a, i) => a + i.drops.length, 0)}<br>` +
+    `reprodução a 30 fps = filmado a ${30 * params.slow} fps`;
+  document.querySelectorAll('.params input[type=range]').forEach(paintRange);
+}
+
+playBtn.addEventListener('click', () => {
+  if (!playing && time >= DUR - 1e-6) time = 0;
+  setPlaying(!playing);
+});
+$('restart').addEventListener('click', () => { time = 0; renderState(); });
+scrub.addEventListener('pointerdown', () => { scrubbing = true; });
+window.addEventListener('pointerup', () => { scrubbing = false; });
+scrub.addEventListener('input', () => { setPlaying(false); paintRange(scrub); time = parseFloat(scrub.value); renderState(); });
+document.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => setCam(b.dataset.cam)));
+function bindParam(id, key, isBool) {
+  const el = $(id);
+  el.addEventListener(isBool ? 'change' : 'input', () => {
+    params[key] = isBool ? el.checked : parseFloat(el.value);
+    if (!isBool) { buildEvents(); renderState(); }
+    updateReadouts();
+  });
+}
+bindParam('p-slow', 'slow'); bindParam('p-drop', 'drop'); bindParam('p-fingers', 'fingers'); bindParam('p-loop', 'loop', true);
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !(e.target instanceof HTMLInputElement && e.target.type !== 'checkbox' && e.target.type !== 'range')) {
+    e.preventDefault(); playBtn.click();
+  }
+});
+if (window.innerWidth > 720) $('params').open = true;
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  applyFov();
+}
+window.addEventListener('resize', resize);
+
+buildEvents();
+if (reduced) time = 0.75;
+setPlaying(playing);
+updateReadouts();
+setCam('three', true);
+resize();
+renderState();
+
+// gancho para renderização quadro a quadro (exportar vídeo)
+window.__splash = {
+  renderAt(T) { time = T; renderState(); controls.update(); renderer.render(scene, camera); },
+  setCam(m) { setCam(m, true); resize(); },
+  setPlaying, params, frozen: false
+};
+
+let last = performance.now();
+function frame(now) {
+  if (window.__splash.frozen) { requestAnimationFrame(frame); return; }
+  const dtw = Math.min(0.05, (now - last) / 1000); last = now;
+  if (playing) {
+    time += dtw;
+    if (time > DUR) {
+      if (params.loop) time = 0;
+      else { time = DUR; setPlaying(false); }
+    }
+    renderState();
+  }
+  updateCamera(dtw);
+  renderer.render(scene, camera);
+  updateUI();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
